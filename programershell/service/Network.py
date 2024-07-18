@@ -4,6 +4,7 @@ from sdbus_block.networkmanager import (
     NetworkDeviceWireless,
     IPv4Config,
 )
+from share.decoratos import call_registered_functions
 from sdbus import sd_bus_open_system
 from threading import Thread
 from time import sleep
@@ -69,10 +70,10 @@ class NetworkService(Thread):
             new_ips = []
             for device_path in devices_paths:
                 generic_device = NetworkDeviceGeneric(device_path, system_bus)
-                print(generic_device.device_type, generic_device.interface)
+                #print(generic_device.device_type, generic_device.interface)
                 if generic_device.device_type == 2:
                     pass
-                    print(NetworkDeviceWireless(device_path, system_bus).get_applied_connection()[0]['connection'])
+                    #print(NetworkDeviceWireless(device_path, system_bus).get_applied_connection()[0]['connection'])
                 device_ip4_conf_path = generic_device.ip4_config
                 if device_ip4_conf_path == '/':
                     continue
@@ -82,4 +83,14 @@ class NetworkService(Thread):
                         #print('     Ip Adress:', address_data['address'][1])
                         new_ips.append(address_data['address'][1])
             self.ip4s = new_ips
+            call_registered_functions("updateip")
             sleep(1)
+ns: NetworkService | None = None
+
+def getNetworkService() -> NetworkService:
+    global ns
+    if ns is None:
+        ns = NetworkService()
+        ns.start()
+    return ns
+        

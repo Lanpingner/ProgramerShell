@@ -13,5 +13,5 @@ class StatusIndicator(Gtk.Box):
     def updateIcon(self, icon_name):
         self.icon.set_from_icon_name(icon_name, Gtk.IconSize.BUTTON)
 
-    def update(self):
+    def update(self) -> bool | None:
         raise NotImplementedError("Subclasses should implement this method")
