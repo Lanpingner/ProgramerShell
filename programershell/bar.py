@@ -5,21 +5,28 @@ from indicators.ClockIndicator import ClockIndicator
 from indicators.CPUIndicator import CPUIndicator
 from indicators.NetworkIndicator import NetworkIndicator
 from indicators.CurrentWindow import CurrentWindowIndicator
+from abstracts.StatusIndicator import StatusIndicator
 
 
-def create_indicator(indicator_type, config):
-    if indicator_type == "memory" and config["enabled"]:
-        return MemoryIndicator(config["update_interval"])
-    elif indicator_type == "cpu" and config["enabled"]:
-        return CPUIndicator(config["update_interval"])
-    elif indicator_type == "clock" and config["enabled"]:
-        return ClockIndicator(config["update_interval"])
-    elif indicator_type == "battery" and config["enabled"]:
-        return BatteryIndicator(config["update_interval"])
-    elif indicator_type == "network" and config["enabled"]:
-        return NetworkIndicator(config["update_interval"])
+def create_indicator(indicator_type, config, monitor_id) -> StatusIndicator | None:
+    lres = None
+    if indicator_type == "memory":
+        lres = MemoryIndicator(config["update_interval"])
+    elif indicator_type == "cpu":
+        lres = CPUIndicator(config["update_interval"])
+    elif indicator_type == "clock":
+        lres = ClockIndicator(config["update_interval"])
+    elif indicator_type == "battery":
+        lres = BatteryIndicator(config["update_interval"])
+    elif indicator_type == "network":
+        lres = NetworkIndicator(config["update_interval"])
     elif indicator_type == "current_window":
-        return CurrentWindowIndicator(config["update_interval"])
+        lres = CurrentWindowIndicator(config["update_interval"])
+    else:
+        return None
+    if lres is not None:
+        lres.monitor_id = monitor_id
+        return lres
     else:
         return None
 
@@ -27,7 +34,7 @@ def create_indicator(indicator_type, config):
 class ShellWindow:
     def __init__(self, screen, indicators_config, position) -> None:
         self.indicators_config = indicators_config
-
+        self.screen = screen
         self.window = Gtk.Window()
         self.window.set_default_size(600, 30)
 
@@ -120,13 +127,8 @@ class ShellWindow:
         self.stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
         self.stack.set_transition_duration(1000)
 
-        # stack_switcher = Gtk.StackSwitcher()
-        # stack_switcher.set_stack(self.stack)
-
-        # Index label
         self.index_label = Gtk.Label()
         hbox.pack_start(self.index_label, False, False, 0)
-        # hbox.pack_start(stack_switcher, False, False, 0)
 
         def on_stack_notify(stack, param):
             visible_child_name = stack.get_visible_child_name()
@@ -153,9 +155,9 @@ class ShellWindow:
             box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
             for indicator_type, position in indicators:
                 indicator = create_indicator(
-                    indicator_type, self.indicators_config[indicator_type]
+                    indicator_type, self.indicators_config[indicator_type], self.screen
                 )
-                if indicator:
+                if indicator is not None:
                     if position == "start":
                         box.pack_start(indicator, False, False, 0)
                     elif position == "center":

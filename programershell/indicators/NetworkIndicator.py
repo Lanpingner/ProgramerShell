@@ -13,5 +13,7 @@ class NetworkIndicator(StatusIndicator):
         register_function("updateip", self.update)
 
     def update(self):
-        self.label.set_text(" ".join(self.network.ip4s))
+        self.label.set_text(
+            " ".join([", ".join(i.ip4.ip) for i in self.network.Network.Interfaces])
+        )
         return True
