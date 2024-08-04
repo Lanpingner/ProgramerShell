@@ -48,15 +48,15 @@ class Hyprland(Thread):
             while True:
                 response = getData(client)
                 msg = response.decode("utf-8").strip().split(">>")
-                call_registered_functions("hypr", {"type": msg[0], "data": msg[1]})
+                if msg[0] == "activewindow":
+                    call_registered_functions(
+                        "hypr-activewindow", {"type": msg[0], "data": msg[1]}
+                    )
+                # if msg[0] == "moveworkspacev2":
+                #    print(msg[1])
+                # if msg[0] == "createworkspacev2":
+                #    print(msg[1])
+                # if msg[0] == "destroyworkspacev2":
+                #    print("dst", msg[1])
         except Exception as e:
             print(f"Error: {e}")
-
-
-def main():
-    hypr = Hyprland()
-    hypr.start()
-
-
-if __name__ == "__main__":
-    main()

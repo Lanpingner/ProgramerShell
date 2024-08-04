@@ -1,14 +1,13 @@
 from gi.repository import GLib
-from service.datacollector import info
 from abstracts.StatusIndicator import StatusIndicator
 from share.decoratos import register_function
 
 
 class CurrentWindowIndicator(StatusIndicator):
-    def __init__(self, update_interval):
-        super().__init__("utilities-system-monitor-symbolic", "Mem: ", update_interval)
+    def __init__(self):
+        super().__init__("utilities-system-monitor-symbolic", "Mem: ")
         self.label.set_text("".ljust(45, " "))
-        register_function("hypr", self.update_with_data)
+        register_function("hypr-activewindow", self.update_with_data)
 
     def update_with_data(self, data=None):
         if data is not None:

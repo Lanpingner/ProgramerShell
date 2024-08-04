@@ -3,6 +3,7 @@ from sdbus_block.networkmanager import (
     NetworkDeviceGeneric,
     NetworkDeviceWireless,
     IPv4Config,
+    AccessPoint,
 )
 from sdbus import sd_bus_open_system
 from threading import Thread
@@ -85,9 +86,13 @@ class NetworkService(Thread):
     def has_state_changed(self):
         current_state = str(self.Network.Interfaces)
         if self.last_network_state != current_state:
+            print(self.last_network_state, " -> ", current_state)
             self.last_network_state = current_state
             return True
         return False
+
+    def added(self, data):
+        print(data)
 
     def run(self) -> None:
         system_bus = sd_bus_open_system()  # We need system bus
@@ -115,6 +120,18 @@ class NetworkService(Thread):
                             )
                         elif generic_device.device_type == InterfaceType.WIFI.value:
                             wifi_device = NetworkDeviceWireless(device_path, system_bus)
+                            for l in wifi_device.get_all_access_points():
+                                ap = AccessPoint(l, system_bus)
+                                if str(l) == str(wifi_device.active_access_point):
+                                    print("Active", ap.ssid)
+                                else:
+                                    print(ap.ssid)
+                            # for l in wifi_device.get_all_access_points():
+                            # ap = AccessPoint(l, system_bus)
+                            # if str(l) == str(wifi_device.active_access_point):
+                            #    print("Active", ap.ssid)
+                            # else:
+                            #    print(ap.ssid)
                             self.Network.pushWifiObject(
                                 generic_device.interface,
                                 "",
@@ -127,21 +144,10 @@ class NetworkService(Thread):
                     self.has_state_changed()
                     or (current_time - self.last_call_time) >= 10
                 ):
-                    call_registered_functions("updateip", None)
+                    call_registered_functions("updateip", self.Network)
                     self.last_call_time = current_time
 
                 sleep(1)
             except Exception as e:
                 print(e)
                 sleep(1)
-
-
-ns: NetworkService | None = None
-
-
-def getNetworkService() -> NetworkService:
-    global ns
-    if ns is None:
-        ns = NetworkService()
-        ns.start()
-    return ns

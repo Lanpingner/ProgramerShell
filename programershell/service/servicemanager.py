@@ -1,5 +1,6 @@
 from service.datacollector import DataCollector
 from service.hyprland import Hyprland
+from service.Network import NetworkService
 
 
 def startServices():
@@ -8,3 +9,5 @@ def startServices():
     metrics_thread.start()
     hypr = Hyprland()
     hypr.start()
+    net = NetworkService()
+    net.start()

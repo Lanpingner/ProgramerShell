@@ -2,7 +2,7 @@ from gi.repository import Gtk, GtkLayerShell, GLib, Gdk
 
 
 class StatusIndicator(Gtk.Box):
-    def __init__(self, icon_name, label_text, update_interval):
+    def __init__(self, icon_name, label_text):
         super().__init__(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
         self.icon: Gtk.Image = Gtk.Image.new_from_icon_name(
             icon_name, Gtk.IconSize.BUTTON
@@ -10,7 +10,8 @@ class StatusIndicator(Gtk.Box):
         self.label = Gtk.Label(label=label_text)
         self.pack_start(self.icon, False, False, 0)
         self.pack_start(self.label, False, False, 0)
-        self.update_interval = update_interval
+        self.monitor_id: int | None = None
+        self.label.get_style_context().add_class("label")
         self.show_all()
         # self.update()
 

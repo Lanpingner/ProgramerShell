@@ -18,9 +18,6 @@ def monitors():
     for i in range(n_screens):
         print(
             str(i).center(10),
-            # display.get_monitor(i),
-            # display.get_monitor(i).get_display(),
-            ##display.get_monitor(i).get_display().get_default_screen(),
             "|",
             str(
                 f"{display.get_monitor(i).get_manufacturer()} {display.get_monitor(i).get_model()}"

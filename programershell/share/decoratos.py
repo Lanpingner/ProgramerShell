@@ -9,16 +9,18 @@ def register_function(cat, method):
     registered_functions.append((cat, method))
 
 
-def call_registered_functions(icat, data=None):
+def call_registered_functions(icat, data=None, log=True):
     for cat, method in registered_functions:
         if callable(method):
             if icat == cat:
-                print(
-                    f"{datetime.datetime.now()} ", "[{:<10}] calling update".format(cat)
-                )
+                if log:
+                    print(
+                        f"{datetime.datetime.now()} ",
+                        "[{:<10}] calling update".format(cat),
+                    )
                 if data is None:
                     method()
                 else:
-                    # print("with args, data:", data)
-                    # print(inspect.signature(method))
                     method(data)
+        else:
+            registered_functions.remove((cat, method))

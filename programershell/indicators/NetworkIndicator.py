@@ -1,19 +1,16 @@
 from gi.repository import GLib
-from service.datacollector import info
 from abstracts.StatusIndicator import StatusIndicator
-from service.Network import getNetworkService
 from share.decoratos import register_function
 
 
 class NetworkIndicator(StatusIndicator):
-    def __init__(self, update_interval):
-        super().__init__("emblem-synchronizing-symbolic", "IP: ", update_interval)
-        self.network = getNetworkService()
-        # GLib.timeout_add_seconds(update_interval, self.update)
-        register_function("updateip", self.update)
+    def __init__(self):
+        super().__init__("emblem-synchronizing-symbolic", "IP: ")
+        register_function("updateip", self.update_with_data)
 
-    def update(self):
-        self.label.set_text(
-            " ".join([", ".join(i.ip4.ip) for i in self.network.Network.Interfaces])
-        )
+    def update_with_data(self, data=None):
+        if data is not None:
+            self.label.set_text(
+                " ".join([", ".join(i.ip4.ip) for i in data.Interfaces])
+            )
         return True

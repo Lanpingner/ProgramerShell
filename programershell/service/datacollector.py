@@ -2,54 +2,97 @@ from threading import Thread
 import psutil
 import time
 from enum import Enum
+from share.decoratos import call_registered_functions
+
 
 class BatteryStatus(Enum):
     NONE = 0
-    CHARGING = 1 
-    DESC = 2 
+    CHARGING = 1
+    DESC = 2
     FULL = 3
 
-class CPU():
-    def __init__(self) -> None:
-        self.usage: float = 0
 
-class Memory():
-    def __init__(self) -> None:
-        self.percent :float = 0
-        self.used: float = 0
-        self.total: float = 0
+class Value:
+    def __init__(self, tolerance: float = 0.1) -> None:
+        self.tolerance = tolerance
+        self._value: float = 0
+        self.owner = None
+        self.name = None
+        self.last_update_cycle = 0
+        self.max_none_update_cycle = 5
 
-class Battery():
-    def __init__(self) -> None:
-        self.percent: float = 0
-        self.status: BatteryStatus = BatteryStatus.NONE
+    def update(self, newvalue: float) -> bool:
+        if abs(newvalue - self._value) >= self.tolerance:
+            self._value = newvalue
+            self.sendUpdate()
+            return True
+        if self.last_update_cycle == self.max_none_update_cycle:
+            self.sendUpdate(log=False)
+            self.last_update_cycle = 0
+        else:
+            self.last_update_cycle += 1
+        return False
 
-class CommonInfoObject():
-    def __init__(self) -> None:
-        self.CPU = CPU()
-        self.VirtualMemory = Memory()
-        self.SwapMemory = Memory()
-        self.Battery = Battery()
+    def sendUpdate(self, log=True):
+        call_registered_functions(
+            self.get_formatted_name(), data={"data": self.get()}, log=log
+        )
 
-info = CommonInfoObject()
+    def get(self) -> float:
+        return self._value
+
+    def __set_name__(self, owner, name):
+        self.owner = owner
+        self.name = name
+
+    def __get__(self, instance, owner):
+        return self
+
+    def get_formatted_name(self) -> str:
+        return f"{self.owner.__name__.lower()}_{self.name}_value"
+
+
+class CPU:
+    usage: Value = Value(tolerance=2)
+
+
+class Memory:
+    percent: Value = Value(tolerance=0.5)
+    used: Value = Value()
+    total: Value = Value()
+
+
+class Battery:
+    percent: Value = Value()
+    status: Value = Value(tolerance=0)
+
+
+class CommonInfoObject:
+    def __init__(self) -> None:
+        self.CPU: CPU = CPU()
+        self.VirtualMemory: Memory = Memory()
+        self.SwapMemory: Memory = Memory()
+        self.Battery: Battery = Battery()
+
 
 class DataCollector(Thread):
     def __init__(self) -> None:
         super().__init__()
+        self.info = CommonInfoObject()
 
     def run(self) -> None:
-        global info
         while True:
-            info.VirtualMemory.percent = psutil.virtual_memory().percent
-            info.CPU.usage = psutil.cpu_percent(interval=1)
+            virtual_memory = psutil.virtual_memory()
+            self.info.VirtualMemory.percent.update(virtual_memory.percent)
+            self.info.CPU.usage.update(psutil.cpu_percent(interval=1))
             battery = psutil.sensors_battery()
-            info.Battery.percent = battery.percent if battery else 0 
-            if battery.power_plugged:
-                info.Battery.status = BatteryStatus.CHARGING
+            if battery:
+                self.info.Battery.percent.update(battery.percent)
+                if battery.power_plugged:
+                    self.info.Battery.status.update(BatteryStatus.CHARGING.value)
+                else:
+                    self.info.Battery.status.update(BatteryStatus.DESC.value)
             else:
-                info.Battery.status = BatteryStatus.DESC
+                self.info.Battery.percent.update(0)
+                self.info.Battery.status.update(BatteryStatus.NONE.value)
             time.sleep(1)
-
-
-
-

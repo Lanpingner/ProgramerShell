@@ -1,16 +1,15 @@
 from gi.repository import GLib
-from service.datacollector import info, BatteryStatus
+from service.datacollector import BatteryStatus
 from abstracts.StatusIndicator import StatusIndicator
+from share.decoratos import register_function
+
 
 class BatteryIndicator(StatusIndicator):
-    def __init__(self, update_interval):
-        super().__init__('battery-good-symbolic', 'Battery: ', update_interval)
-        GLib.timeout_add_seconds(update_interval, self.update)  # Update every 60 seconds
+    def __init__(self):
+        super().__init__("battery-good-symbolic", "Battery: ")
+        register_function("battery_percent_value", self.update_with_data_percent)
 
-    def update(self):
-        if info.Battery.status == BatteryStatus.CHARGING:
-            self.updateIcon('emblem-synchronizing-symbolic')
-        else:
-            self.updateIcon('battery-good-symbolic')
-        self.label.set_text(f'{round(info.Battery.percent, 0)}%')
+    def update_with_data_percent(self, data=None):
+        if data is not None:
+            self.label.set_text(f"{round(float(data['data']), 0)}%")
         return True

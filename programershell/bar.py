@@ -11,17 +11,17 @@ from abstracts.StatusIndicator import StatusIndicator
 def create_indicator(indicator_type, config, monitor_id) -> StatusIndicator | None:
     lres = None
     if indicator_type == "memory":
-        lres = MemoryIndicator(config["update_interval"])
+        lres = MemoryIndicator()
     elif indicator_type == "cpu":
-        lres = CPUIndicator(config["update_interval"])
+        lres = CPUIndicator()
     elif indicator_type == "clock":
-        lres = ClockIndicator(config["update_interval"])
+        lres = ClockIndicator()
     elif indicator_type == "battery":
-        lres = BatteryIndicator(config["update_interval"])
+        lres = BatteryIndicator()
     elif indicator_type == "network":
-        lres = NetworkIndicator(config["update_interval"])
+        lres = NetworkIndicator()
     elif indicator_type == "current_window":
-        lres = CurrentWindowIndicator(config["update_interval"])
+        lres = CurrentWindowIndicator()
     else:
         return None
     if lres is not None:
@@ -39,7 +39,7 @@ class ShellWindow:
         self.window.set_default_size(600, 30)
 
         self.sidebar_window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-        self.sidebar_window.set_default_size(200, 400)
+        self.sidebar_window.set_default_size(400, 600)
 
         self.setupWindow()
         self.setupSidebar()
@@ -90,31 +90,59 @@ class ShellWindow:
         )
 
         self.window.get_style_context().add_class("window")
+        self.sidebar_window.get_style_context().add_class("window")
 
         self.window.show_all()
         self.window.connect("destroy", Gtk.main_quit)
 
     def setupSidebar(self):
-        # Add some sample content to the sidebar
+        # Sidebar container
         sidebar_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         sidebar_box.set_margin_top(5)
         sidebar_box.set_margin_bottom(5)
         sidebar_box.set_margin_start(10)
         sidebar_box.set_margin_end(10)
-        sidebar_label = Gtk.Label(label="Sidebar Content")
-        sidebar_box.pack_start(sidebar_label, True, True, 0)
+        sidebar_box.get_style_context().add_class("hbox")
 
+        # Create a Notebook (Tab Controller)
+        notebook = Gtk.Notebook()
+        sidebar_box.pack_start(notebook, True, True, 0)
+
+        # Create icons for tabs
+        general_icon = Gtk.Image.new_from_icon_name(
+            "preferences-system", Gtk.IconSize.MENU
+        )
+        network_icon = Gtk.Image.new_from_icon_name("network-wired", Gtk.IconSize.MENU)
+        bluetooth_icon = Gtk.Image.new_from_icon_name("bluetooth", Gtk.IconSize.MENU)
+        audio_icon = Gtk.Image.new_from_icon_name("audio-headphones", Gtk.IconSize.MENU)
+
+        # Create content for each tab
+        general_content = Gtk.Label(label="General Settings")
+        network_content = Gtk.Label(label="Network Settings")
+        bluetooth_content = Gtk.Label(label="Bluetooth Settings")
+        audio_content = Gtk.Label(label="Audio Settings")
+
+        # Add each tab to the notebook
+        notebook.append_page(general_content, general_icon)
+        notebook.append_page(network_content, network_icon)
+        notebook.append_page(bluetooth_content, bluetooth_icon)
+        notebook.append_page(audio_content, audio_icon)
+
+        # Add the notebook to the sidebar box
+        sidebar_box.pack_start(notebook, True, True, 0)
+
+        # Add sidebar box to sidebar window
         self.sidebar_window.add(sidebar_box)
         self.sidebar_window.hide()
 
         # Toggle the sidebar visibility when the button is clicked
-        def on_toggle_button_clicked(button):
-            if self.sidebar_window.is_visible():
-                self.sidebar_window.hide()
-            else:
-                self.sidebar_window.show_all()
+        self.toggle_button.connect("clicked", self.on_toggle_button_clicked)
 
-        self.toggle_button.connect("clicked", on_toggle_button_clicked)
+    def on_toggle_button_clicked(self, button):
+        if self.sidebar_window.get_visible():
+            self.sidebar_window.hide()
+        else:
+            self.sidebar_window.show_all()
 
     def setupWindow(self):
         hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
@@ -140,7 +168,6 @@ class ShellWindow:
         pages = {
             "1": [
                 ("current_window", "start"),
-                ("cpu", "start"),
                 ("network", "center"),
                 ("clock", "end"),
                 ("cpu", "end"),
